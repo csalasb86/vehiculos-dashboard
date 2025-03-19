@@ -142,6 +142,7 @@
     .chart-container {
       height: 300px;
       width: 100%;
+      position: relative;
     }
     .stats-container {
       display: grid;
@@ -255,7 +256,9 @@
       <div class="panel">
         <h3 class="panel-title">Alertas por día</h3>
         <div class="panel-content">
-          <div id="alerts-chart" class="chart-container"></div>
+          <div class="chart-container">
+            <canvas id="alerts-chart"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -263,7 +266,9 @@
     <div class="panel">
       <h3 class="panel-title">Tendencia de alertas (últimos 7 días)</h3>
       <div class="panel-content">
-        <div id="trend-chart" class="chart-container"></div>
+        <div class="chart-container">
+          <canvas id="trend-chart"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -426,59 +431,68 @@
       updateClock();
       setInterval(updateClock, 1000);
       
-      // Configurar gráfico de alertas por día
-      const chartData = generateChartData();
-      const alertsChart = new Chart(document.getElementById('alerts-chart'), {
-        type: 'bar',
-        data: {
-          labels: chartData.days,
-          datasets: [
-            {
-              label: 'Vehículos en alerta',
-              data: chartData.alertData,
-              backgroundColor: 'rgba(255, 99, 132, 0.5)',
-              borderColor: 'rgb(255, 99, 132)',
-              borderWidth: 1
+      // Asegurarse de que los canvas están disponibles antes de inicializar los gráficos
+      setTimeout(() => {
+        // Configurar gráfico de alertas por día
+        const chartData = generateChartData();
+        const alertsChartCtx = document.getElementById('alerts-chart');
+        if (alertsChartCtx) {
+          const alertsChart = new Chart(alertsChartCtx, {
+            type: 'bar',
+            data: {
+              labels: chartData.days,
+              datasets: [
+                {
+                  label: 'Vehículos en alerta',
+                  data: chartData.alertData,
+                  backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                  borderColor: 'rgb(255, 99, 132)',
+                  borderWidth: 1
+                },
+                {
+                  label: 'Total vehículos',
+                  data: chartData.totalData,
+                  backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                  borderColor: 'rgb(54, 162, 235)',
+                  borderWidth: 1
+                }
+              ]
             },
-            {
-              label: 'Total vehículos',
-              data: chartData.totalData,
-              backgroundColor: 'rgba(54, 162, 235, 0.5)',
-              borderColor: 'rgb(54, 162, 235)',
-              borderWidth: 1
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
             }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true
+          });
+        }
+        
+        // Configurar gráfico de tendencia
+        const trendData = generateTrendData();
+        const trendChartCtx = document.getElementById('trend-chart');
+        if (trendChartCtx) {
+          const trendChart = new Chart(trendChartCtx, {
+            type: 'line',
+            data: {
+              labels: trendData.dates,
+              datasets: [{
+                label: 'Vehículos en alerta',
+                data: trendData.data,
+                fill: false,
+                borderColor: 'rgb(255, 99, 132)',
+                tension: 0.1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false
             }
-          }
+          });
         }
-      });
-      
-      // Configurar gráfico de tendencia
-      const trendData = generateTrendData();
-      const trendChart = new Chart(document.getElementById('trend-chart'), {
-        type: 'line',
-        data: {
-          labels: trendData.dates,
-          datasets: [{
-            label: 'Vehículos en alerta',
-            data: trendData.data,
-            fill: false,
-            borderColor: 'rgb(255, 99, 132)',
-            tension: 0.1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false
-        }
-      });
+      }, 100);
       
       // Configurar filtros
       document.getElementById('filter-status').addEventListener('change', function(e) {
